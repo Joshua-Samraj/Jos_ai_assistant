@@ -1,0 +1,70 @@
+{
+  "name": "jos-code-explainer",
+  "displayName": "Jos Code Explainer - Gemini AI",
+  "description": "AI code explanation using free Google Gemini API",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "jos-code-explainer.explainCode",
+        "title": "Explain Selected Code",
+        "category": "Jos AI"
+      },
+      {
+        "command": "jos-code-explainer.setApiKey",
+        "title": "Set Gemini API Key",
+        "category": "Jos AI"
+      },
+      {
+        "command": "jos-code-explainer.openChatBot",
+        "title": "Open ChatBot",
+        "category": "Jos AI"
+      },
+      {
+        "command": "jos-code-explainer.openChatHistory",
+        "title": "Open Chat History",
+        "category": "Jos AI"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "jos-code-explainer.explainCode",
+          "when": "editorHasSelection",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Jos Code Explainer",
+      "properties": {
+        "jos-code-explainer.geminiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your Google Gemini API key (get free at aistudio.google.com)",
+          "scope": "application"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
