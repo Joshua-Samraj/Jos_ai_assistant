@@ -624,6 +624,8 @@ export class ChatBotWebview {
             }
             
             function loadSession(sessionId) {
+                console.log('Loading session:', sessionId);
+                
                 // Clear current chat messages
                 chatMessages.innerHTML = '';
                 
@@ -631,7 +633,13 @@ export class ChatBotWebview {
                 document.querySelectorAll('.history-item').forEach(item => {
                     item.classList.remove('active');
                 });
-                document.querySelector(\`[data-session-id="\${sessionId}"]\`)?.classList.add('active');
+                const activeItem = document.querySelector(\`[data-session-id="\${sessionId}"]\`);
+                if (activeItem) {
+                    activeItem.classList.add('active');
+                    console.log('Marked session as active');
+                } else {
+                    console.log('Could not find session item to mark as active');
+                }
                 
                 currentSessionId = sessionId;
                 
@@ -642,10 +650,34 @@ export class ChatBotWebview {
             }
             
             function loadSessionMessages(messages) {
+                console.log('Loading session messages:', messages.length);
                 chatMessages.innerHTML = '';
-                messages.forEach(msg => {
-                    addMessage(msg.text, msg.isUser);
+                
+                messages.forEach((msg, index) => {
+                    console.log('Loading message', index, ':', msg.text.substring(0, 50) + '...');
+                    // Add messages without animation for existing conversations
+                    addMessageInstant(msg.text, msg.isUser);
                 });
+                
+                // Scroll to bottom after loading all messages
+                setTimeout(() => {
+                    scrollToBottom();
+                }, 100);
+            }
+            
+            function addMessageInstant(text, isUser = false) {
+                const messageDiv = document.createElement('div');
+                
+                if (isUser) {
+                    messageDiv.className = 'chat-message user';
+                    messageDiv.innerHTML = \`<div class="message-content">\${escapeHtml(text)}</div>\`;
+                } else {
+                    messageDiv.className = 'chat-message ai';
+                    const processedText = typeof markdownToHtml === 'function' ? markdownToHtml(text) : escapeHtml(text);
+                    messageDiv.innerHTML = \`<div class="message-content">\${processedText}</div>\`;
+                }
+                
+                chatMessages.appendChild(messageDiv);
             }
             
             function escapeHtml(text) {
@@ -706,6 +738,7 @@ export class ChatBotWebview {
             // Listen for messages from extension
             window.addEventListener('message', event => {
                 const message = event.data;
+                console.log('Received message:', message.command, message);
                 
                 switch (message.command) {
                     case 'welcomeMessage':
@@ -719,6 +752,7 @@ export class ChatBotWebview {
                         loadChatHistory(message.sessions);
                         break;
                     case 'loadSessionMessages':
+                        console.log('Loading session messages:', message.messages);
                         loadSessionMessages(message.messages);
                         break;
                     case 'newSession':

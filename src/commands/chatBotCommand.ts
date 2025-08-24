@@ -29,9 +29,13 @@ export class ChatBotCommand {
         
         // Create a test session if none exist (for debugging)
         const existingSessions = this.storageService.getAllSessions();
+        console.log('Existing sessions count:', existingSessions.length);
         if (existingSessions.length === 0) {
+            console.log('Creating test session...');
             const testSession = this.storageService.createSession('Welcome to Jos AI');
-            this.storageService.addMessage(testSession.id, 'Hello! How can I help you today?', false);
+            this.storageService.addMessage(testSession.id, 'Welcome! I\'m Jos AI, your coding assistant.', false);
+            this.storageService.addMessage(testSession.id, 'How can I help you with your code today?', false);
+            console.log('Test session created with ID:', testSession.id);
         }
         
         this.sendChatHistory(panel);
@@ -91,6 +95,9 @@ export class ChatBotCommand {
                         break;
                     case 'exportHistory':
                         await this.exportHistory();
+                        break;
+                    case 'openStorageLocation':
+                        await this.openStorageLocation();
                         break;
                     case 'searchSessions':
                         this.searchAndDisplaySessions(panel, message.query);
@@ -178,12 +185,16 @@ export class ChatBotCommand {
 
     private static async loadSession(panel: vscode.WebviewPanel, sessionId: string): Promise<void> {
         const session = this.storageService.getSession(sessionId);
+        console.log('Loading session:', sessionId, 'found:', !!session);
         if (session) {
+            console.log('Session messages count:', session.messages.length);
             this.currentSession = session;
             panel.webview.postMessage({
                 command: 'loadSessionMessages',
                 messages: session.messages
             });
+        } else {
+            console.log('Session not found:', sessionId);
         }
     }
 
@@ -252,6 +263,31 @@ export class ChatBotCommand {
         if (uri) {
             await vscode.workspace.fs.writeFile(uri, Buffer.from(historyData, 'utf8'));
             vscode.window.showInformationMessage('Chat history exported successfully!');
+        }
+    }
+
+    private static async openStorageLocation(): Promise<void> {
+        const stats = this.storageService.getStorageStats();
+        const storageUri = vscode.Uri.file(stats.filePath);
+        
+        try {
+            // Try to open the file in VS Code
+            await vscode.window.showTextDocument(storageUri);
+        } catch (error) {
+            // If file doesn't exist or can't be opened, show the folder
+            const folderUri = vscode.Uri.file(require('path').dirname(stats.filePath));
+            try {
+                await vscode.commands.executeCommand('revealFileInOS', folderUri);
+            } catch (folderError) {
+                vscode.window.showInformationMessage(
+                    `Storage file location: ${stats.filePath}`,
+                    'Copy Path'
+                ).then(selection => {
+                    if (selection === 'Copy Path') {
+                        vscode.env.clipboard.writeText(stats.filePath);
+                    }
+                });
+            }
         }
     }
 
@@ -404,6 +440,8 @@ export class ChatBotCommand {
         <h1>📚 Chat History</h1>
         <div class="stats">
             ${stats.sessionCount} sessions • ${stats.totalMessages} messages • ${stats.storageSize}
+            <br>
+            <small style="opacity: 0.7;">📁 ${stats.filePath} ${stats.fileExists ? '✅' : '❌'}</small>
         </div>
     </div>
     
@@ -413,6 +451,7 @@ export class ChatBotCommand {
     
     <div class="actions">
         <button class="btn btn-secondary" onclick="exportHistory()">Export History</button>
+        <button class="btn btn-secondary" onclick="openStorageLocation()">Open Storage File</button>
         <button class="btn btn-danger" onclick="clearAllHistory()">Clear All</button>
     </div>
     
@@ -467,6 +506,12 @@ export class ChatBotCommand {
         function exportHistory() {
             vscode.postMessage({
                 command: 'exportHistory'
+            });
+        }
+        
+        function openStorageLocation() {
+            vscode.postMessage({
+                command: 'openStorageLocation'
             });
         }
         

@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface ChatMessage {
     id: string;
@@ -17,16 +19,34 @@ export interface ChatSession {
 }
 
 export class StorageService {
-    private static readonly STORAGE_KEY = 'jos-ai-chat-history';
+    private static readonly STORAGE_FILE = 'jos-ai-chat-history.json';
     private static readonly MAX_SESSIONS = 50; // Limit to prevent excessive storage
     private static readonly MAX_MESSAGES_PER_SESSION = 100;
+    private readonly storageFilePath: string;
 
-    constructor(private context: vscode.ExtensionContext) { }
+    constructor(private context: vscode.ExtensionContext) {
+        // Get the workspace root folder
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (workspaceFolder) {
+            this.storageFilePath = path.join(workspaceFolder.uri.fsPath, StorageService.STORAGE_FILE);
+        } else {
+            // Fallback to extension's global storage path if no workspace
+            this.storageFilePath = path.join(context.globalStorageUri.fsPath, StorageService.STORAGE_FILE);
+        }
+        
+        // Ensure the directory exists
+        this.ensureStorageDirectory();
+    }
 
     // Get all chat sessions
     getAllSessions(): ChatSession[] {
-        const sessions = this.context.globalState.get<ChatSession[]>(StorageService.STORAGE_KEY, []);
-        return sessions.sort((a, b) => b.lastUpdatedAt - a.lastUpdatedAt);
+        try {
+            const sessions = this.loadSessionsFromFile();
+            return sessions.sort((a, b) => b.lastUpdatedAt - a.lastUpdatedAt);
+        } catch (error) {
+            console.error('Error loading sessions:', error);
+            return [];
+        }
     }
 
     // Get a specific session by ID
@@ -113,7 +133,11 @@ export class StorageService {
 
     // Clear all chat history
     clearAllHistory(): void {
-        this.context.globalState.update(StorageService.STORAGE_KEY, []);
+        try {
+            this.saveSessionsToFile([]);
+        } catch (error) {
+            console.error('Error clearing chat history:', error);
+        }
     }
 
     // Get recent sessions (last 10)
@@ -176,8 +200,36 @@ export class StorageService {
         }
     }
 
+    // Export to a specific file
+    async exportToFile(filePath: string): Promise<boolean> {
+        try {
+            const sessions = this.getAllSessions();
+            const jsonData = JSON.stringify(sessions, null, 2);
+            fs.writeFileSync(filePath, jsonData, 'utf8');
+            return true;
+        } catch (error) {
+            console.error('Failed to export to file:', error);
+            return false;
+        }
+    }
+
+    // Import from a specific file
+    async importFromFile(filePath: string): Promise<boolean> {
+        try {
+            if (!fs.existsSync(filePath)) {
+                return false;
+            }
+
+            const jsonData = fs.readFileSync(filePath, 'utf8');
+            return this.importHistory(jsonData);
+        } catch (error) {
+            console.error('Failed to import from file:', error);
+            return false;
+        }
+    }
+
     // Get storage statistics
-    getStorageStats(): { sessionCount: number; totalMessages: number; storageSize: string } {
+    getStorageStats(): { sessionCount: number; totalMessages: number; storageSize: string; filePath: string; fileExists: boolean } {
         const sessions = this.getAllSessions();
         const totalMessages = sessions.reduce((sum, session) => sum + session.messages.length, 0);
         const storageSize = this.calculateStorageSize(sessions);
@@ -185,12 +237,86 @@ export class StorageService {
         return {
             sessionCount: sessions.length,
             totalMessages,
-            storageSize: this.formatBytes(storageSize)
+            storageSize: this.formatBytes(storageSize),
+            filePath: this.storageFilePath,
+            fileExists: fs.existsSync(this.storageFilePath)
         };
     }
 
     private saveSessions(sessions: ChatSession[]): void {
-        this.context.globalState.update(StorageService.STORAGE_KEY, sessions);
+        try {
+            this.saveSessionsToFile(sessions);
+        } catch (error) {
+            console.error('Error saving sessions:', error);
+        }
+    }
+
+    private ensureStorageDirectory(): void {
+        try {
+            const dir = path.dirname(this.storageFilePath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+        } catch (error) {
+            console.error('Error creating storage directory:', error);
+        }
+    }
+
+    private loadSessionsFromFile(): ChatSession[] {
+        try {
+            if (!fs.existsSync(this.storageFilePath)) {
+                // Create empty file if it doesn't exist
+                this.saveSessionsToFile([]);
+                return [];
+            }
+
+            const fileContent = fs.readFileSync(this.storageFilePath, 'utf8');
+            if (!fileContent.trim()) {
+                return [];
+            }
+
+            const sessions = JSON.parse(fileContent) as ChatSession[];
+            
+            // Validate the data structure
+            if (!Array.isArray(sessions)) {
+                console.warn('Invalid sessions data format, resetting to empty array');
+                return [];
+            }
+
+            return sessions;
+        } catch (error) {
+            console.error('Error loading sessions from file:', error);
+            // Return empty array on error and try to backup corrupted file
+            this.backupCorruptedFile();
+            return [];
+        }
+    }
+
+    private saveSessionsToFile(sessions: ChatSession[]): void {
+        try {
+            const jsonData = JSON.stringify(sessions, null, 2);
+            fs.writeFileSync(this.storageFilePath, jsonData, 'utf8');
+        } catch (error) {
+            console.error('Error saving sessions to file:', error);
+            throw error;
+        }
+    }
+
+    private backupCorruptedFile(): void {
+        try {
+            if (fs.existsSync(this.storageFilePath)) {
+                const backupPath = this.storageFilePath + '.backup.' + Date.now();
+                fs.copyFileSync(this.storageFilePath, backupPath);
+                console.log('Corrupted file backed up to:', backupPath);
+            }
+        } catch (error) {
+            console.error('Error backing up corrupted file:', error);
+        }
+    }
+
+    // Get the storage file path (useful for debugging or manual access)
+    getStorageFilePath(): string {
+        return this.storageFilePath;
     }
 
     private generateId(): string {
