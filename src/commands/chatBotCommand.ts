@@ -44,7 +44,7 @@ export class ChatBotCommand {
     static async openHistoryPanel(): Promise<void> {
         const panel = vscode.window.createWebviewPanel(
             'josAiChatHistory',
-            '📚 Chat History',
+            'Chat History',
             vscode.ViewColumn.Beside,
             { enableScripts: true }
         );

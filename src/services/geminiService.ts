@@ -1,8 +1,11 @@
 import axios from 'axios';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export class GeminiService {
     private static readonly API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
     private static readonly TIMEOUT = 30000;
+    private static readonly HISTORY_FILE = 'jos-ai-chat-history.json';
 
     static async getCodeExplanation(code: string, apiKey: string): Promise<string | null> {
         try {
@@ -47,20 +50,57 @@ Talk to me like you're explaining it to a fellow developer - keep it friendly an
         }
     }
 
-    static async getChatResponse(message: string, apiKey: string): Promise<string | null> {
+    static async getChatResponse(message: string, apiKey: string, sessionId?: string): Promise<string | null> {
         try {
-            const prompt = `You are a helpful AI assistant specializing in programming and code-related questions. 
-        
-User question: ${message}
+            // Read and parse chat history
+            let chatHistory = [];
+            try {
+                const historyPath = path.join(__dirname, this.HISTORY_FILE);
+                if (fs.existsSync(historyPath)) {
+                    const historyData = fs.readFileSync(historyPath, 'utf8');
+                    const history = JSON.parse(historyData);
+                    
+                    // If sessionId is provided, get messages from that specific session
+                    if (sessionId) {
+                        const session = history.find((s: any) => s.id === sessionId);
+                        if (session) {
+                            chatHistory = session.messages.map((msg: any) => ({
+                                role: msg.isUser ? 'user' : 'model',
+                                parts: [{ text: msg.text }]
+                            }));
+                        }
+                    } else {
+                        // Get messages from all sessions (or limit to recent ones)
+                        chatHistory = history.flatMap((session: any) => 
+                            session.messages.map((msg: any) => ({
+                                role: msg.isUser ? 'user' : 'model',
+                                parts: [{ text: msg.text }]
+                            }))
+                        ).slice(-10); // Limit to last 10 messages to avoid token limits
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not load chat history:', error);
+            }
 
-Please provide a helpful, conversational response. If it's about code, explain it clearly. If it's a general question, answer it in a friendly, informative way.`;
+            const systemPrompt = `You are a helpful AI assistant specializing in programming and code-related questions. 
+You have the following conversation history with this user. Continue the conversation naturally.`;
+
+            // Build the contents array with history and current message
+            const contents = [
+                {
+                    parts: [{ text: systemPrompt }],
+                    role: 'user'
+                },
+                ...chatHistory,
+                {
+                    parts: [{ text: `Current user question: ${message}` }],
+                    role: 'user'
+                }
+            ];
 
             const response = await axios.post(`${this.API_BASE_URL}?key=${apiKey}`, {
-                contents: [{
-                    parts: [{
-                        text: prompt
-                    }]
-                }],
+                contents: contents,
                 generationConfig: {
                     temperature: 0.7,
                     topK: 40,
@@ -77,6 +117,7 @@ Please provide a helpful, conversational response. If it's about code, explain i
             return response.data.candidates?.[0]?.content?.parts?.[0]?.text || null;
         } catch (error: any) {
             console.error('Gemini Chat API error:', error);
+            this.handleApiError(error);
             return null;
         }
     }

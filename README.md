@@ -1,71 +1,75 @@
-# jos-ai-code-assistant README
+# Jos Code Explainer - Gemini AI
 
-This is the README for your extension "jos-ai-code-assistant". After writing up a brief description, we recommend including the following sections.
+Jos Code Explainer is a Visual Studio Code extension that uses the free Google Gemini API to provide AI-powered code explanations and a conversational coding assistant directly within VS Code.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Explain Selected Code**: Select any code in your editor and get a clear, friendly explanation powered by Gemini AI.
+- **Interactive ChatBot**: Open a chat panel to ask programming questions, get debugging help, or discuss best practices.
+- **Chat History**: View, search, and manage your previous conversations and code explanations.
+- **Secure API Key Management**: Easily set and manage your Gemini API key from the command palette.
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![Code Explanation Screenshot](images/code-explanation.png)
+![ChatBot Screenshot](images/chatbot.png)
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- Visual Studio Code v1.60.0 or higher
+- A free [Google Gemini API key](https://aistudio.google.com/app/apikey)
+
+## Getting Started
+
+1. **Install the Extension**  
+   Download and install from the VS Code Marketplace or clone this repository and run it in VS Code.
+
+2. **Set Up Your Gemini API Key**  
+   - Run the command `Jos AI: Set Gemini API Key` from the Command Palette (`Ctrl+Shift+P`).
+   - Paste your API key (starts with `AIza...`).
+
+3. **Explain Code**  
+   - Select code in your editor.
+   - Right-click and choose `Jos AI: Explain Selected Code` or run the command from the palette.
+
+4. **Open ChatBot**  
+   - Run `Jos AI: Open ChatBot` to start a conversation with the AI.
+
+5. **View Chat History**  
+   - Run `Jos AI: Open Chat History` to browse, search, export, or delete previous sessions.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+- `jos-code-explainer.geminiApiKey`: Your Google Gemini API key.
+
+## Commands
+
+- `Jos AI: Explain Selected Code` — Explains the currently selected code.
+- `Jos AI: Set Gemini API Key` — Set or update your Gemini API key.
+- `Jos AI: Open ChatBot` — Opens the AI chat assistant.
+- `Jos AI: Open Chat History` — View and manage your chat history.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Gemini API rate limits may apply.
+- Large code selections may be truncated for explanation.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+- Initial release with code explanation, chat, and history features.
 
 ---
 
-## Following extension guidelines
+## Contributing
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+Pull requests and suggestions are welcome! Please open an issue to discuss your ideas.
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+## License
 
-## Working with Markdown
+MIT
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+---
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Enjoy using Jos Code Explainer!**

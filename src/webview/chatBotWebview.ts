@@ -5,7 +5,7 @@ export class ChatBotWebview {
     static create(): vscode.WebviewPanel {
         const panel = vscode.window.createWebviewPanel(
             'josAiChatBot',
-            '🤖 Jos AI ChatBot',
+            'Jos AI ChatBot',
             vscode.ViewColumn.Beside,
             { enableScripts: true }
         );
@@ -18,7 +18,7 @@ export class ChatBotWebview {
         setTimeout(() => {
             panel.webview.postMessage({
                 command: 'welcomeMessage',
-                text: 'Hi there! 👋 I\'m Jos AI, your coding assistant. Ask me anything about programming, code explanations, debugging help, or general tech questions. How can I help you today?'
+                text: 'Hi there!  I\'m Jos AI, your coding assistant. Ask me anything about programming, code explanations, debugging help, or general tech questions. How can I help you today?'
             });
         }, 500);
     }
@@ -434,7 +434,7 @@ export class ChatBotWebview {
 <body>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h3>💬 Recent Chats</h3>
+            <h3>Recent Chats</h3>
             <button class="close-sidebar-btn" id="closeSidebarBtn" title="Hide sidebar">×</button>
         </div>
         <div class="sidebar-content" id="sidebarContent">
@@ -449,11 +449,11 @@ export class ChatBotWebview {
                 <span id="sidebarToggleText">Recent</span>
             </button>
             <div class="header-content">
-                <h1>🤖 Jos AI ChatBot</h1>
+                <h1>Jos AI ChatBot</h1>
                 <p>Your intelligent coding assistant - Ask me anything!</p>
             </div>
             <button class="new-chat-btn" id="newChatBtn" title="Start new conversation">
-                <span>✨</span>
+                <span></span>
                 <span>New Chat</span>
             </button>
         </div>
@@ -603,7 +603,7 @@ export class ChatBotWebview {
                 
                 let historyHtml = \`
                     <div class="history-item" onclick="startNewChat()" style="border: 1px dashed var(--vscode-input-border); margin-bottom: 10px;">
-                        <div class="history-title" style="color: #4CAF50;">✨ New Chat</div>
+                        <div class="history-title" style="color: #4CAF50;">New Chat</div>
                         <div class="history-meta">Start a fresh conversation</div>
                     </div>
                 \`;
@@ -696,10 +696,10 @@ export class ChatBotWebview {
                 sidebar.classList.toggle('hidden', !sidebarVisible);
                 
                 if (sidebarVisible) {
-                    sidebarToggleIcon.textContent = '📋';
+                    sidebarToggleIcon.textContent = '';
                     sidebarToggleText.textContent = 'Recent';
                 } else {
-                    sidebarToggleIcon.textContent = '📋';
+                    sidebarToggleIcon.textContent = '';
                     sidebarToggleText.textContent = 'Show Recent';
                 }
             }
